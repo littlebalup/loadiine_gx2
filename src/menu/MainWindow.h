@@ -151,7 +151,11 @@ private:
     GuiImageData *pointerImgData[4];
     GuiImage *pointerImg[4];
     bool pointerValid[4];
+<<<<<<< HEAD
     bool launchingGame = 0;
+=======
+    bool launchingGame;
+>>>>>>> refs/remotes/dimok789/master
 };
 
 #endif //_MAIN_WINDOW_H_
