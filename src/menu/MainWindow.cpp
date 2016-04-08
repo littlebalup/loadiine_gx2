@@ -392,15 +392,10 @@ void MainWindow::OnLayoutSwitchClicked(GuiElement *element)
 
 void MainWindow::OnGameLaunch(GuiGameBrowser *element, int gameIdx)
 {
-<<<<<<< HEAD
-    if (launchingGame) {return;}
-    launchingGame = 1;
-=======
     if (launchingGame)
         return;
 
     launchingGame = true;
->>>>>>> refs/remotes/dimok789/master
 
     CSettings::setValueAsU16(CSettings::GameStartIndex,gameIdx);
 
@@ -456,7 +451,6 @@ void MainWindow::OnGameLoadFinish(GameLauncher * launcher, const discHeader *hea
     if(currentDrcFrame)
         currentDrcFrame->resetState();
 
-    launchingGame = 0;
     launcher->setState(GuiElement::STATE_DISABLED);
     launcher->setEffect(EFFECT_FADE, -15, 0);
     launcher->effectFinished.connect(this, &MainWindow::OnCloseEffectFinish);
