@@ -29,7 +29,7 @@
 
 CThread * GameLauncherMenu::pThread = NULL;
 
-GameLauncherMenu::GameLauncherMenu(MainWindow * main, int gameIdx)
+GameLauncherMenu::GameLauncherMenu(int gameIdx)
     : GuiFrame(0,0)
     , gameIdx(gameIdx)
     , bgImage(500, 500, (GX2Color){0, 0, 0, 255})
@@ -49,7 +49,8 @@ GameLauncherMenu::GameLauncherMenu(MainWindow * main, int gameIdx)
     , okText("O.K.", 46, glm::vec4(0.1f, 0.1f, 0.1f, 1.0f))
     , titleImageData(Resources::GetImageData("settingsTitle.png"))
     , titleImage(titleImageData)
-    , extraSaveText("Extra Save:", 40, glm::vec4(0.8f, 0.8f, 0.8f, 1.0f))
+    , extraSaveText(tr("Extra Save:"), 40, glm::vec4(0.8f, 0.8f, 0.8f, 1.0f))
+    , dlcEnableText(tr("Enable DLC Support:"), 40, glm::vec4(0.8f, 0.8f, 0.8f, 1.0f))
     , frameImageData(Resources::GetImageData("gameSettingsFrame.png"))
     , frameImage(frameImageData)
     , touchTrigger(GuiTrigger::CHANNEL_1, GuiTrigger::VPAD_TOUCH)
@@ -70,6 +71,7 @@ GameLauncherMenu::GameLauncherMenu(MainWindow * main, int gameIdx)
     , rightArrowButton(rightArrowImage.getWidth(), rightArrowImage.getHeight())
     , DPADButtons(0,0)
     , extraSaveBox(false)
+    , dlcEnableBox(false)
     , progresswindow("")
     , pathSelectBox(tr("Update Folder"),NULL)
     , saveModeSelectBox(tr("Save Mode"),NULL)
@@ -96,7 +98,7 @@ GameLauncherMenu::GameLauncherMenu(MainWindow * main, int gameIdx)
 
     progresswindow.setVisible(false);
 
-    main->gameLauncherMenuNextClicked.connect(this,&GameLauncherMenu::OnGotHeaderFromMain);
+    Application::instance()->getMainWindow()->gameLauncherMenuNextClicked.connect(this,&GameLauncherMenu::OnGotHeaderFromMain);
 
     CVideo * video = Application::instance()->getVideo();
     width = video->getTvWidth()*windowScale;
@@ -189,22 +191,41 @@ GameLauncherMenu::GameLauncherMenu(MainWindow * main, int gameIdx)
 
     gameLauncherMenuFrame.append(&extraSaveBox);
 
-    f32 xpos = 0.13f;
+    dlcEnableBox.setTrigger(&touchTrigger);
+    dlcEnableBox.setTrigger(&wpadTouchTrigger);
+    dlcEnableBox.setSoundClick(buttonClickSound);
+    dlcEnableBox.valueChanged.connect(this, &GameLauncherMenu::OnDLCEnableValueChanged);
 
-    int selectbox_count = 0;
+    gameLauncherMenuFrame.append(&dlcEnableBox);
+
+    f32 xpos = 0.11f;
+    f32 yOffset = -(0.3 * height);
+
+    dlcEnableBox.setScale(buttonscale*windowScale);
     saveModeSelectBox.setScale(buttonscale*windowScale);
-    saveModeSelectBox.setPosition(xpos*width,-(0.2*height) + (selectbox_count++ * saveModeSelectBox.getTopValueHeight() * saveModeSelectBox.getScale() *1.2f));
     launchModeSelectBox.setScale(buttonscale*windowScale);
-    launchModeSelectBox.setPosition(xpos*width,-(0.2*height) + (selectbox_count++ * saveModeSelectBox.getTopValueHeight()* saveModeSelectBox.getScale()*1.2f));
     extraSaveBox.setScale(buttonscale*windowScale);
-
-    extraSaveBox.setPosition(xpos*width + (saveModeSelectBox.getTopValueWidth()*saveModeSelectBox.getScale() /2.0) - (extraSaveBox.getWidth()*extraSaveBox.getScale()/2.0),-(0.2*height) + (selectbox_count * saveModeSelectBox.getTopValueHeight()* saveModeSelectBox.getScale()*1.2f));
-
     extraSaveText.setScale(buttonscale*windowScale);
-    extraSaveText.setPosition(xpos*width - (saveModeSelectBox.getTopValueWidth()*saveModeSelectBox.getScale() /2.0)+ (extraSaveText.getTextWidth()/2.0),-(0.2*height) + (selectbox_count++ * saveModeSelectBox.getTopValueHeight()* saveModeSelectBox.getScale()*1.2f));
-
+    dlcEnableText.setScale(buttonscale*windowScale);
     pathSelectBox.setScale(buttonscale* windowScale);
-    pathSelectBox.setPosition(xpos*width,-(0.2*height) + (selectbox_count++ * saveModeSelectBox.getTopValueHeight()* saveModeSelectBox.getScale()*1.2f));
+
+    dlcEnableBox.setPosition(xpos*width + (saveModeSelectBox.getTopValueWidth()*saveModeSelectBox.getScale() /2.0) - (dlcEnableBox.getWidth()*dlcEnableBox.getScale()/2.0), yOffset);
+    dlcEnableText.setPosition(xpos*width - (saveModeSelectBox.getTopValueWidth()*saveModeSelectBox.getScale() /2.0)+ (dlcEnableText.getTextWidth()/2.0), yOffset);
+    yOffset += saveModeSelectBox.getTopValueHeight() * saveModeSelectBox.getScale();
+
+    saveModeSelectBox.setPosition(xpos*width, yOffset);
+    yOffset += saveModeSelectBox.getTopValueHeight() * saveModeSelectBox.getScale();
+
+    launchModeSelectBox.setPosition(xpos*width, yOffset);
+    yOffset += saveModeSelectBox.getTopValueHeight() * saveModeSelectBox.getScale() * 1.2f;
+
+    extraSaveBox.setPosition(xpos*width + (saveModeSelectBox.getTopValueWidth()*saveModeSelectBox.getScale() /2.0) - (extraSaveBox.getWidth()*extraSaveBox.getScale()/2.0), yOffset);
+
+    extraSaveText.setPosition(xpos*width - (saveModeSelectBox.getTopValueWidth()*saveModeSelectBox.getScale() /2.0)+ (extraSaveText.getTextWidth()/2.0), yOffset);
+    yOffset += saveModeSelectBox.getTopValueHeight() * saveModeSelectBox.getScale() * 1.2f;
+
+    pathSelectBox.setPosition(xpos*width, yOffset);
+    yOffset += saveModeSelectBox.getTopValueHeight() * saveModeSelectBox.getScale() * 1.2f;
 
     pathSelectBox.showhide.connect(this, &GameLauncherMenu::OnSelectBoxShowHide);
     launchModeSelectBox.showhide.connect(this, &GameLauncherMenu::OnSelectBoxShowHide),
@@ -214,6 +235,7 @@ GameLauncherMenu::GameLauncherMenu(MainWindow * main, int gameIdx)
     launchModeSelectBox.valueChanged.connect(this, &GameLauncherMenu::OnSelectBoxValueChanged),
     saveModeSelectBox.valueChanged.connect(this, &GameLauncherMenu::OnSelectBoxValueChanged);
 
+    gameLauncherMenuFrame.append(&dlcEnableText);
     gameLauncherMenuFrame.append(&extraSaveText);
     gameLauncherMenuFrame.append(&saveModeSelectBox);
     gameLauncherMenuFrame.append(&pathSelectBox);
@@ -227,6 +249,7 @@ GameLauncherMenu::GameLauncherMenu(MainWindow * main, int gameIdx)
     append(&progresswindow);
 
     focusElements[GamelaunchermenuFocus::ExtraSave] = &extraSaveBox;
+    focusElements[GamelaunchermenuFocus::EnableDLC] = &dlcEnableBox;
     focusElements[GamelaunchermenuFocus::Quit] = &quitButton;
     focusElements[GamelaunchermenuFocus::UpdatePath] = &pathSelectBox;
     focusElements[GamelaunchermenuFocus::SaveMethod] = &saveModeSelectBox;
@@ -247,14 +270,28 @@ GameLauncherMenu::~GameLauncherMenu()
     Resources::RemoveImageData(titleImageData);
     Resources::RemoveImageData(frameImageData);
 
-
     Resources::RemoveSound(buttonClickSound);
 
-    AsyncDeleter::pushForDelete(bgFadingImageDataAsync);
-    AsyncDeleter::pushForDelete(bgUsedImageDataAsync);
-    AsyncDeleter::pushForDelete(bgNewImageDataAsync);
-
-    AsyncDeleter::pushForDelete(coverImg);
+    if(bgFadingImageDataAsync)
+    {
+        bgFadingImageDataAsync->imageLoaded.disconnect_all();
+        AsyncDeleter::pushForDelete(bgFadingImageDataAsync);
+    }
+    if(bgUsedImageDataAsync)
+    {
+        bgUsedImageDataAsync->imageLoaded.disconnect_all();
+        AsyncDeleter::pushForDelete(bgUsedImageDataAsync);
+    }
+    if(bgNewImageDataAsync)
+    {
+        bgNewImageDataAsync->imageLoaded.disconnect_all();
+        AsyncDeleter::pushForDelete(bgNewImageDataAsync);
+    }
+    if(coverImg)
+    {
+        coverImg->imageLoaded.disconnect_all();
+        AsyncDeleter::pushForDelete(coverImg);
+    }
 
     if(GameLauncherMenu::pThread != NULL){
         delete GameLauncherMenu::pThread;
@@ -310,6 +347,12 @@ void GameLauncherMenu::OnExtraSaveValueChanged(GuiToggle * toggle,bool value){
     bChanged = true;
 }
 
+void GameLauncherMenu::OnDLCEnableValueChanged(GuiToggle * toggle,bool value){
+    gamesettings.EnableDLC = value;
+    gamesettingsChanged = true;
+    bChanged = true;
+}
+
 void GameLauncherMenu::OnGotHeaderFromMain(GuiElement *button, int gameIdx)
 {
     this->gameIdx = gameIdx;
@@ -320,15 +363,21 @@ void GameLauncherMenu::setHeader(const discHeader * header)
 {
     this->header =  header;
     gameLauncherMenuFrame.remove(coverImg);
-    delete coverImg;
-
 
     std::string filepath = CSettings::getValueAsString(CSettings::GameCover3DPath) + "/" + header->id + ".png";
+
+    if(coverImg)
+    {
+        coverImg->imageLoaded.disconnect_all();
+        AsyncDeleter::pushForDelete(coverImg);
+        coverImg = NULL;
+    }
 
     coverImg = new GuiImageAsync(filepath, &noCover);
     coverImg->setAlignment(ALIGN_LEFT);
     coverImg->setPosition(50,0);
     coverImg->setScale((5.0/3.0) * windowScale);
+    coverImg->imageLoaded.connect(this, &GameLauncherMenu::OnCoverLoadedFinished);
     gameLauncherMenuFrame.append(coverImg);
     loadBgImage();
 
@@ -353,14 +402,7 @@ void GameLauncherMenu::setHeader(const discHeader * header)
 
     //gameTitle.setText(gamename.c_str());
     bool result = CSettingsGame::getInstance()->LoadGameSettings(header->id,gamesettings);
-    if(!result){
-        gamesettings = GameSettings();
-        gamesettings.ID6 = header->id;
-        gamesettings.extraSave = false;
-        gamesettings.launch_method = LOADIINE_MODE_DEFAULT;
-        gamesettings.save_method = GAME_SAVES_DEFAULT;
-        gamesettings.updateFolder = COMMON_UPDATE_PATH;
-    }else{
+    if(result){
         log_print("Found ");
     }
 
@@ -401,11 +443,13 @@ void GameLauncherMenu::setHeader(const discHeader * header)
         i++;
     }
 
+
     pathSelectBox.Init(updatePaths,updatePathID);
     //TODO: change to set Value
     saveModeSelectBox.Init(saveModeNames,savemodeID);
     launchModeSelectBox.Init(launchModeNames,launchmodeID);
     extraSaveBox.setValue(gamesettings.extraSave);
+    dlcEnableBox.setValue(gamesettings.EnableDLC);
 
     gamesettingsChanged = false;
     bChanged = true;
@@ -527,6 +571,7 @@ void GameLauncherMenu::loadBgImage()
     //! TODO: fix (state != STATE_DISABLED) its a cheap trick to make the thread not create new images when fading out because it causes issues
     if(bgNewImageDataAsync && !isStateSet(STATE_DISABLED))
     {
+        bgNewImageDataAsync->imageLoaded.disconnect_all();
         GuiImageAsync::removeFromQueue(bgNewImageDataAsync);
         AsyncDeleter::pushForDelete(bgNewImageDataAsync);
         bgNewImageDataAsync = new GuiImageAsync(filepath, NULL);
@@ -536,32 +581,64 @@ void GameLauncherMenu::loadBgImage()
         delete bgNewImageDataAsync;
         bgNewImageDataAsync = new GuiImageAsync(filepath,  NULL);
     }
-    if(bgNewImageDataAsync){
-        remove(bgUsedImageDataAsync);
-    }
-    bgNewImageDataAsync->loaded.connect(this, &GameLauncherMenu::OnBgLoadedFinished);
+
+    bgNewImageDataAsync->imageLoaded.connect(this, &GameLauncherMenu::OnBgLoadedFinished);
 }
 
-void GameLauncherMenu::OnBgLoadedFinished(GuiElement *element)
+void GameLauncherMenu::OnCoverLoadedFinished(GuiImageAsync *image)
 {
-    if(bgNewImageDataAsync->getImageData())
+    //! since this function is entered through an asynchron call from the gui image async thread
+    //! the GUI has to be locked before accessing the data
+    Application::instance()->getMainWindow()->lockGUI();
+    if(image->imageLoaded.connected()){
+        f32 oldScale = image->getScale();
+        f32 coverScale = noCover.getHeight() / image->getHeight();
+        image->setScale(oldScale * coverScale);
+    }
+    Application::instance()->getMainWindow()->unlockGUI();
+}
+
+void GameLauncherMenu::OnBgLoadedFinished(GuiImageAsync *image)
+{
+    //! since this function is entered through an asynchron call from the gui image async thread
+    //! the GUI has to be locked before accessing the data
+    Application::instance()->getMainWindow()->lockGUI();
+    if(image->imageLoaded.connected())
     {
-        bgUsedImageDataAsync = bgNewImageDataAsync;
-        bgNewImageDataAsync = NULL;
-        bgUsedImageDataAsync->setColorIntensity(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
-        bgUsedImageDataAsync->setParent(this);
-        bgUsedImageDataAsync->setEffect(EFFECT_FADE, 10, 255);
-        bgUsedImageDataAsync->setScale(windowScale);
+        if(bgNewImageDataAsync->getImageData())
+        {
+            if(bgUsedImageDataAsync)
+            {
+                bgFadingImageDataAsync = bgUsedImageDataAsync;
+                bgFadingImageDataAsync->setEffect(EFFECT_FADE, -10, 0);
+                bgFadingImageDataAsync->effectFinished.connect(this, &GameLauncherMenu::OnBgEffectFinished);
+            }
+
+            bgUsedImageDataAsync = bgNewImageDataAsync;
+            bgNewImageDataAsync = NULL;
+            bgUsedImageDataAsync->setColorIntensity(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
+            bgUsedImageDataAsync->setParent(this);
+            bgUsedImageDataAsync->setEffect(EFFECT_FADE, 10, 255);
+            bgUsedImageDataAsync->setScale(windowScale);
+        }
+        else
+        {
+            bgNewImageDataAsync->imageLoaded.disconnect_all();
+            AsyncDeleter::pushForDelete(bgNewImageDataAsync);
+            bgNewImageDataAsync = NULL;
+        }
 
         insert(bgUsedImageDataAsync,2);
     }
+    Application::instance()->getMainWindow()->unlockGUI();
 }
 
-void GameLauncherMenu::OnBgEffectFinished(GuiElement *element)
+void GameLauncherMenu::OnBgEffectFinished(GuiElement *image)
 {
-    if(element == bgFadingImageDataAsync)
+    if(image == bgFadingImageDataAsync)
     {
         remove(bgFadingImageDataAsync);
+        bgFadingImageDataAsync->imageLoaded.disconnect_all();
         AsyncDeleter::pushForDelete(bgFadingImageDataAsync);
         bgFadingImageDataAsync = NULL;
     }
@@ -586,13 +663,13 @@ void GameLauncherMenu::update(GuiController *c)
         bFocusChanged = false;
     }
     if(bChanged){
-        if(gamesettings.updateFolder.compare(COMMON_UPDATE_PATH) != 0){            
+        if(gamesettings.updateFolder.compare(COMMON_UPDATE_PATH) != 0){
             extraSaveBox.setAlpha(1.0f);
             extraSaveText.setAlpha(1.0f);
             extraSaveBox.clearState(STATE_DISABLED);
             extraSaveText.clearState(STATE_DISABLED);
         }else{
-            if(gamelauncherelementfocus == GamelaunchermenuFocus::ExtraSave){                
+            if(gamelauncherelementfocus == GamelaunchermenuFocus::ExtraSave){
                 gamelauncherelementfocus = GamelaunchermenuFocus::LaunchMethod;
                 bFocusChanged =  true;
             }

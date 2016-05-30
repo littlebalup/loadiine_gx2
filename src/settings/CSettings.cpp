@@ -110,10 +110,6 @@ void CSettings::SetDefault()
     settingsValues[AppLanguage].dataType = TypeString;
     settingsValues[AppLanguage].strValue = new std::string();
 
-    settingsNames[DebugLoggerIP] = "DebugLoggerIP";
-    settingsValues[DebugLoggerIP].dataType = TypeString;
-    settingsValues[DebugLoggerIP].strValue = new std::string("192.168.178.3");
-
     settingsNames[GameStartIndex] = "GameStartIndex";
     settingsValues[GameStartIndex].dataType = TypeU16;
     settingsValues[GameStartIndex].uiValue = 0;
@@ -125,6 +121,14 @@ void CSettings::SetDefault()
     settingsNames[LaunchPyGecko] = "LaunchPyGecko";
     settingsValues[LaunchPyGecko].dataType = TypeU8;
     settingsValues[LaunchPyGecko].ucValue = SETTING_OFF;
+
+    settingsNames[HIDPadEnabled] = "HIDPadUse";
+    settingsValues[HIDPadEnabled].dataType = TypeU8;
+    settingsValues[HIDPadEnabled].ucValue = SETTING_OFF;
+
+    settingsNames[ShowGameSettings] = "ShowGameSettings";
+    settingsValues[ShowGameSettings].dataType = TypeU8;
+    settingsValues[ShowGameSettings].ucValue = SETTING_ON;
 
 }
 

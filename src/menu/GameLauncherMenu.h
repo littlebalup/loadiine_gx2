@@ -22,18 +22,18 @@
 #include "gui/GuiParticleImage.h"
 #include "gui/GuiCheckBox.h"
 #include "gui/GuiSelectBox.h"
-#include "game/GameList.h"
-#include "menu/MainWindow.h"
-#include "settings/CSettingsGame.h"
-#include "settings/SettingsEnums.h"
 #include "gui/GuiImageAsync.h"
 #include "gui/GuiSwitch.h"
+#include "game/GameList.h"
+#include "ProgressWindow.h"
+#include "settings/CSettingsGame.h"
+#include "settings/SettingsEnums.h"
 
 class GameLauncherMenu : public GuiFrame, public sigslot::has_slots<>
 {
 
 public:
-    GameLauncherMenu(MainWindow *  main, int gameIdx);
+    GameLauncherMenu(int gameIdx);
     virtual ~GameLauncherMenu();
 
     sigslot::signal3<GuiElement *,const discHeader *, bool> gameLauncherMenuQuitClicked;
@@ -50,6 +50,7 @@ public:
         LaunchMethod,
         ExtraSave,
         UpdatePath,
+       	EnableDLC,
        	Quit,
        	MAX_VALUE
     };
@@ -86,6 +87,7 @@ private:
 
     void OnSelectBoxValueChanged(GuiSelectBox * selectbox,std::string value);
     void OnExtraSaveValueChanged(GuiToggle * toggle,bool value);
+    void OnDLCEnableValueChanged(GuiToggle * toggle,bool value);
 
     void OnGotHeaderFromMain(GuiElement *button, int gameIdx);
     void OnLeftArrowClick(GuiButton *button, const GuiController *controller, GuiTrigger *trigger);
@@ -93,7 +95,8 @@ private:
     void OnSelectBoxShowHide(GuiSelectBox * selectBox,bool value);
 
     void loadBgImage();
-    void OnBgLoadedFinished(GuiElement *element);
+    void OnBgLoadedFinished(GuiImageAsync *element);
+    void OnCoverLoadedFinished(GuiImageAsync *element);
     void OnBgEffectFinished(GuiElement *element);
 
     GuiFrame gameLauncherMenuFrame;
@@ -101,7 +104,7 @@ private:
     GuiImage bgImage;
     GuiImage bgBlur;
     GuiImageData noCover;
-    GuiImage * coverImg = NULL;
+    GuiImageAsync * coverImg = NULL;
     GuiSound *buttonClickSound;
 
     GuiImageData *quitImageData;
@@ -122,6 +125,7 @@ private:
     GuiImage titleImage;
 
     GuiText extraSaveText;
+    GuiText dlcEnableText;
 
     GuiImageData *frameImageData;
     GuiImage frameImage;
@@ -147,6 +151,7 @@ private:
     GuiButton DPADButtons;
 
     GuiSwitch extraSaveBox;
+    GuiSwitch dlcEnableBox;
 
     const discHeader *header;
     GameSettings gamesettings;
